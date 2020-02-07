@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 
   double
     d_one = 1.0,
-    dtime, dtime_best, 
+    dtime, dtime_best = 0.0, 
     diff, maxdiff = 0.0, gflops;
 
   double

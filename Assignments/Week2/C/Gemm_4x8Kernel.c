@@ -7,11 +7,16 @@
 void Gemm_MRxNRKernel( int k, double *A, int ldA, double *B, int ldB,
 		double *C, int ldC )
 {
-  /* Declare vector registers to hold 4x4 C and load them */
+  /* Declare vector registers to hold 4x8 C and load them */
   __m256d gamma_0123_0 = _mm256_loadu_pd( &gamma( 0,0 ) );
   __m256d gamma_0123_1 = _mm256_loadu_pd( &gamma( 0,1 ) );
   __m256d gamma_0123_2 = _mm256_loadu_pd( &gamma( 0,2 ) );
   __m256d gamma_0123_3 = _mm256_loadu_pd( &gamma( 0,3 ) );
+
+  __m256d gamma_0123_4 = _mm256_loadu_pd( &gamma( 0,4 ) );
+  __m256d gamma_0123_5 = _mm256_loadu_pd( &gamma( 0,5 ) );
+  __m256d gamma_0123_6 = _mm256_loadu_pd( &gamma( 0,6 ) );
+  __m256d gamma_0123_7 = _mm256_loadu_pd( &gamma( 0,7 ) );
    	
   for ( int p=0; p<k; p++ ){
     /* Declare vector register for load/broadcasting beta( p,j ) */
@@ -43,6 +48,34 @@ void Gemm_MRxNRKernel( int k, double *A, int ldA, double *B, int ldB,
     beta_p_j     = _mm256_broadcast_sd( &beta( p, 3) );
     gamma_0123_3 = _mm256_fmadd_pd( alpha_0123_p, beta_p_j, gamma_0123_3 );
 
+    /* Load/broadcast beta( p,4 ). */
+    beta_p_j = _mm256_broadcast_sd( &beta( p, 4) );
+    
+    /* update the fifth column of C with the current column of A times
+       beta ( p,4 ) */
+    gamma_0123_4 = _mm256_fmadd_pd( alpha_0123_p, beta_p_j, gamma_0123_4 );
+
+    /* Load/broadcast beta( p,5 ). */
+    beta_p_j = _mm256_broadcast_sd( &beta( p, 5) );
+    
+    /* update the sixth column of C with the current column of A times
+       beta ( p,5 ) */
+    gamma_0123_5 = _mm256_fmadd_pd( alpha_0123_p, beta_p_j, gamma_0123_5 );
+
+    /* Load/broadcast beta( p,6 ). */
+    beta_p_j = _mm256_broadcast_sd( &beta( p, 6) );
+    
+    /* update the seventh column of C with the current column of A times
+       beta ( p,6 ) */
+    gamma_0123_6 = _mm256_fmadd_pd( alpha_0123_p, beta_p_j, gamma_0123_6 );
+    
+    /* Load/broadcast beta( p,7 ). */
+    beta_p_j = _mm256_broadcast_sd( &beta( p, 7) );
+    
+    /* update the eighth column of C with the current column of A times
+       beta ( p,7 ) */
+    gamma_0123_7 = _mm256_fmadd_pd( alpha_0123_p, beta_p_j, gamma_0123_7 );
+
   }
   
   /* Store the updated results */
@@ -50,4 +83,9 @@ void Gemm_MRxNRKernel( int k, double *A, int ldA, double *B, int ldB,
   _mm256_storeu_pd( &gamma(0,1), gamma_0123_1 );
   _mm256_storeu_pd( &gamma(0,2), gamma_0123_2 );
   _mm256_storeu_pd( &gamma(0,3), gamma_0123_3 );
+
+  _mm256_storeu_pd( &gamma(0,4), gamma_0123_4 );
+  _mm256_storeu_pd( &gamma(0,5), gamma_0123_5 );
+  _mm256_storeu_pd( &gamma(0,6), gamma_0123_6 );
+  _mm256_storeu_pd( &gamma(0,7), gamma_0123_7 );
 }

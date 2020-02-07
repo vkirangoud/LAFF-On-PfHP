@@ -6,11 +6,11 @@ BLAS_INC  := $(HOME)/blis/include/blis
 # indicate how the object files are to be created
 CC         := gcc
 LINKER     := $(CC)
-CFLAGS     := -O3 -I$(BLAS_INC) -m64 -mavx2 -std=c99 -march=native -fopenmp -D_POSIX_C_SOURCE=200809L
+CFLAGS     := -O3 -I$(BLAS_INC) -fomit-frame-pointer -march=znver2 -Wall -Wno-unused-function -Wfatal-errors -fPIC -fopenmp -D_POSIX_C_SOURCE=200112L
 FFLAGS     := $(CFLAGS) 
 
 # set the range of experiments to be performed
-NREPEATS   := 3#       number of times each experiment is repeated.  The best time is reported.
+NREPEATS   := 1000#       number of times each experiment is repeated.  The best time is reported.
 NFIRST     := 48#     smallest size to be timed.
 NLAST_SMALL:= 500#    largest size to be timed for slow implementations.
 NLAST      := 1500#   largest size to be timed for fast implementations.
