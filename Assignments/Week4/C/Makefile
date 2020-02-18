@@ -1,12 +1,13 @@
 # HOME      := /Users/rvdg
 # Make sure you have BLIS installed in your home directory.
-BLAS_LIB  := $(HOME)/blis/lib/libblis.a
-BLAS_INC  := $(HOME)/blis/include/blis
+BLAS_LIB  := $(HOME)/mylibs/blis2.1mt/lib/libblis-mt.a
+BLAS_INC  := $(HOME)/mylibs/blis2.1mt/include/blis
 
 # indicate how the object files are to be created
 CC         := gcc
 LINKER     := $(CC)
-CFLAGS     := -O3 -I$(BLAS_INC) -m64 -msse3 -std=c99 -march=native -D_POSIX_C_SOURCE=200112L -fopenmp
+//CFLAGS     := -O3 -I$(BLAS_INC) -m64 -msse3 -std=c99 -march=native -D_POSIX_C_SOURCE=200112L -fopenmp
+CFLAGS     := -O3 -I$(BLAS_INC) -m64  -std=c99 -march=znver2 -D_POSIX_C_SOURCE=200112L -fopenmp 
 FFLAGS     := $(CFLAGS) 
 
 # set the range of experiments to be performed
@@ -64,6 +65,16 @@ MT_JPI: $(OBJS_MT_JPI) $(UTIL_OBJS) Makefile
 	$(LINKER) $(CFLAGS) $(SRC_MT_JPI) driver.c $(UTIL_OBJS) $(BLAS_LIB) -o driver_MT_JPI.x $(LDFLAGS) 
 	echo "$(NREPEATS) $(NFIRST) $(NLAST_SMALLISH) $(NINC)" | ./driver_MT_JPI.x > data/output_MT_JPI.m 
 	tail data/output_MT_JPI.m
+
+# ---------------------
+
+SRC_AOCL_Five_Loops_Packed_8x6Kernel := aocl_driver.c Gemm_Five_Loops_Packed_MRxNRKernel.c Gemm_8x6Kernel_Packed.c PackA.c PackB.c
+
+AOCL_Five_Loops_Packed_8x6Kernel:  $(OBJS_AOCL_Five_Loops_Packed_8x6Kernel) $(UTIL_OBJS) Makefile
+	$(LINKER) $(CFLAGS) -D'MC=$(MC)' -D'NC=$(NC)' -D'KC=$(KC)' -D'MR=8' -D'NR=6' $(SRC_AOCL_Five_Loops_Packed_8x6Kernel) $(UTIL_OBJS) $(BLAS_LIB) -o aocl_driver_Five_Loops_Packed_8x6Kernel.x $(LDFLAGS) 
+	./aocl_driver_Five_Loops_Packed_8x6Kernel.x < in.txt  > data/aocl_output_Five_Loops_Packed_8x6Kernel.m 
+	tail data/aocl_output_Five_Loops_Packed_8x6Kernel.m
+
 
 # ---------------------
 
