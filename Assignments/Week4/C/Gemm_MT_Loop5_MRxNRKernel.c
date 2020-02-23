@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <omp.h>
 
 #include<immintrin.h>
+#include "omp.h"
 
 #define alpha( i,j ) A[ (j)*ldA + (i) ]   // map alpha( i,j ) to array A
 #define beta( i,j )  B[ (j)*ldB + (i) ]   // map beta( i,j ) to array B
@@ -37,8 +37,35 @@ void MyGemm( int m, int n, int k, double *A, int ldA,
 void LoopFive( int m, int n, int k, double *A, int ldA,
 		   double *B, int ldB, double *C, int ldC )
 {
-  for ( int j=0; j<n; j+=NC ) {
-    int jb = min( NC, n-j );    /* Last loop may not involve a full block */
+  int max_threads = omp_get_max_threads();
+
+  /* Resize NC so that each thread uses at most NC/max_threads.
+     Make sure it is a multiple of NR */
+  //  int NC_per_thread = ( ( NC / max_threads ) / NR ) * NR;
+		    
+  /* Compute the width of C that is a multiple of NC_per_thread
+      and the number of threads.
+     Notice that / performs integer division. */
+  int loadbalanced_part = ( n / ( NC * max_threads ) )
+                          * NC * max_threads;
+
+  /* Compute the remainder */
+  int remainder = n - loadbalanced_part;
+
+  /* Compute the remainder per thread.  But it needs to be a multiple 
+     of NR  */
+  int remainder_per_thread = ( ( remainder / max_threads ) / NR ) * NR;  
+  if ( remainder_per_thread == 0 ) remainder_per_thread = NR;
+  
+  /* Compute the loadbalanced part in parallel */
+  #pragma omp parallel for
+  for ( int j=0; j<loadbalanced_part; j+=NC )
+    LoopFour( m, NC, k, A, ldA, &beta( 0,j ), ldB, &gamma( 0,j ), ldC );
+
+  /* Compute the rest in parallel */
+  #pragma omp parallel for
+  for ( int j=loadbalanced_part; j<n; j+=remainder_per_thread ) {
+    int jb = min( remainder_per_thread, n-j );    /* Last loop may not involve a full block */
     LoopFour( m, jb, k, A, ldA, &beta( 0,j ), ldB, &gamma( 0,j ), ldC );
   } 
 }
@@ -59,66 +86,15 @@ void LoopFour( int m, int n, int k, double *A, int ldA, double *B, int ldB,
 
 void LoopThree( int m, int n, int k, double *A, int ldA, double *Btilde, double *C, int ldC )
 {
-
-#if 0
-#pragma omp parallel for
-  for ( int i=0; i<m; i+=MC ) {
-    int ib = min( MC, m-i );    /* Last loop may not involve a full block */
-    double *Atilde = ( double * ) _mm_malloc( MC * KC * sizeof( double ), 64 );
-    PackBlockA_MCxKC( ib, k, &alpha( i, 0 ), ldA, Atilde );
-    LoopTwo( ib, n, k, Atilde, Btilde, &gamma( i,0 ), ldC );
-     _mm_free( Atilde);
-  }
-#endif
-
-#if 0  
-  double *Atilde[OMP_NUM_THREADS];
-  for (int i = 0; i < OMP_NUM_THREADS; i++)
-    {
-      Atilde[i]  = ( double * ) _mm_malloc( MC * KC * sizeof( double ), 64 );
-    }
+  double *Atilde = ( double * ) _mm_malloc( MC * KC * sizeof( double ), 64 );
        
   for ( int i=0; i<m; i+=MC ) {
     int ib = min( MC, m-i );    /* Last loop may not involve a full block */
-    int thidx = omp_get_thread_num();
-    PackBlockA_MCxKC( ib, k, &alpha( i, 0 ), ldA, Atilde[thidx]);
-    LoopTwo( ib, n, k, Atilde[thidx], Btilde, &gamma( i,0 ), ldC );
-  }
-
-  for (int i = 0; i < OMP_NUM_THREADS; i++)
-    {
-      _mm_free( Atilde[i]);
-    }
-  #endif
-
-  double *Atilde = ( double * ) _mm_malloc( MC * KC * omp_get_max_threads() * sizeof( double ), 64 );
-  int max_threads = omp_get_max_threads();
-  /* Distribute m/MC blocks among threads */
-  int loadbalanced_part = (m / (MC * max_threads) ) * (MC * max_threads); // integer division /
-
-  int remainder = m - loadbalanced_part;
-  // Distribute remainder load equally among total threads but should be multiple of  MR
-  int remainder_per_thread = ( (remainder / max_threads ) / MR ) * MR;
-  if (remainder_per_thread == 0 ) remainder_per_thread = MR;
-
-  // Compute the loadbalanced part in parallel
-  #pragma omp parallel for
-  for (int i = 0; i < loadbalanced_part; i += MC) {
-     int ib = MC;    /* Last loop may not involve a full block */
-    PackBlockA_MCxKC( ib, k, &alpha( i, 0 ), ldA, &Atilde[ MC * KC * omp_get_thread_num() ] );
-    LoopTwo( ib, n, k, &Atilde[ MC * KC * omp_get_thread_num() ], Btilde, &gamma( i,0 ), ldC );
-  }
-
-  // Compute the rest in parallel
-  #pragma omp parallel for
-  for (int i=loadbalanced_part; i < m; i += remainder_per_thread ) {
-    int ib = min( m-i, remainder_per_thread ); // last loop may not involve full block
-    PackBlockA_MCxKC( ib, k, &alpha( i, 0 ), ldA, &Atilde[ MC * KC * omp_get_thread_num() ] );
-    LoopTwo( ib, n, k, &Atilde[ MC * KC * omp_get_thread_num() ], Btilde, &gamma( i,0 ), ldC );
+    PackBlockA_MCxKC( ib, k, &alpha( i, 0 ), ldA, Atilde );
+    LoopTwo( ib, n, k, Atilde, Btilde, &gamma( i,0 ), ldC );
   }
 
   _mm_free( Atilde);
- 
 }
 
 void LoopTwo( int m, int n, int k, double *Atilde, double *Btilde, double *C, int ldC )
