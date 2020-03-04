@@ -78,6 +78,18 @@ AOCL_Five_Loops_Packed_8x6Kernel:  $(OBJS_AOCL_Five_Loops_Packed_8x6Kernel) $(UT
 
 # ---------------------
 
+
+
+
+SRC_BLISLAB_STEP4 := blislab_driver.c
+BLISLAB_Step4_8x6Kernel: $(OBJS_BLISLAB_Step4_8x6Kernel) $(UTIL_OBJS) Makefile
+	$(LINKER) $(CFLAGS) $(SRC_BLISLAB_STEP4) $(UTIL_OBJS) $(BLAS_LIB) -I /home/vkiran/code/blislab/step4/include /home/vkiran/code/blislab/step4/lib/libblislab.a  -o blislab_driver_step4_8x6Kernel.x $(LDFLAGS)
+	echo "$(NREPEATS) $(NFIRST) $(NLAST_SMALLISH) $(NINC)" | ./blislab_driver_step4_8x6Kernel.x > data/output_blislab_step4.m
+	tail data/output_blislab_step4.m
+
+
+# ---------------------
+
 SRC_Five_Loops_Packed_8x6Kernel := driver.c Gemm_Five_Loops_Packed_MRxNRKernel.c Gemm_8x6Kernel_Packed.c PackA.c PackB.c
 
 Five_Loops_Packed_8x6Kernel:  $(SRC_Five_Loops_Packed_8x6Kernel) $(UTIL_OBJS) Makefile
@@ -176,6 +188,19 @@ MT_Loop5_8x6Kernel:  $(SRC_MT_Loop5_8x6Kernel) $(UTIL_OBJS) Makefile
 	tail data/output_MT_Loop5_8x6Kernel.m
 
 # ---------------------
+
+
+
+SRC_AOCL_MT_Loop5_8x6Kernel := aocl_driver.c Gemm_MT_Loop5_MRxNRKernel_ver3.c Gemm_8x6Kernel_Packed.c PackA.c PackB.c
+
+AOCL_MT_Loop5_8x6Kernel:  $(OBJS_AOCL_MT_Loop5_8x6Kernel) $(UTIL_OBJS) Makefile
+	$(LINKER) $(CFLAGS) -D'MC=$(MC)' -D'NC=$(NC)' -D'KC=$(KC)' -D'MR=8' -D'NR=6' $(SRC_AOCL_MT_Loop5_8x6Kernel) $(UTIL_OBJS) $(BLAS_LIB) -o aocl_driver_MT_Loop5_8x6Kernel.x $(LDFLAGS) 
+	./aocl_driver_MT_Loop5_8x6Kernel.x < inHPC.txt  > data/aocl_output_MT_Loop5_8x6Kernel.m 
+	tail data/aocl_output_MT_Loop5_8x6Kernel.m
+
+
+# ---------------------
+
 
 SRC_MT_Loop5_12x4Kernel := driver.c Gemm_MT_Loop5_MRxNRKernel.c Gemm_12x4Kernel_Packed.c PackA.c PackB.c
 
