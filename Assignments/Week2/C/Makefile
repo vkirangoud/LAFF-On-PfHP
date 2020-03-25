@@ -285,6 +285,24 @@ JI_12x6Kernel: driver_JI_12x6Kernel.x
 	echo "$(NREPEATS) $(NFIRST) $(NLAST) $(NINC)" | ./driver_JI_12x6Kernel.x > data/output_JI_12x6Kernel.m 
 	tail data/output_JI_12x6Kernel.m
 
-# ---------------------                                                               
+# ---------------------
+
+Gemm_JI_16x3Kernel.o:
+	$(CC) $(CFLAGS) -D'MR=16' -D'NR=3' -o Gemm_JI_16x3Kernel.o -c Gemm_JI_MRxNRKernel.c
+
+OBJS_JI_16x3Kernel := driver.o Gemm_JI_16x3Kernel.o Gemm_16x3Kernel.o
+
+driver_JI_16x3Kernel.x: $(OBJS_JI_16x3Kernel) $(UTIL_OBJS)
+	$(LINKER) $(OBJS_JI_16x3Kernel) $(UTIL_OBJS) $(BLAS_LIB) -o driver_JI_16x3Kernel.x $(LDFLAGS)
+
+JI_16x3Kernel: driver_JI_16x3Kernel.x
+	echo "$(NREPEATS) $(NFIRST) $(NLAST) $(NINC)" | ./driver_JI_16x3Kernel.x > data/output_JI_16x3Kernel.m
+	tail data/output_JI_16x3Kernel.m
+
+# ---------------------
+
+
+
+
 clean:
 	rm -f *.o *~ core *.x *.pdf
