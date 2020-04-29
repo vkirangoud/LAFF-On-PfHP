@@ -1,7 +1,16 @@
 #pragma once
 
+#include<stdlib.h>
 #include <cstdlib> // for rand() and srand()
 #include <ctime> // for time()
+
+#ifndef ELE_MAX // Random numbers generated between [ELE_MIN, ELE_MAX]
+#define ELE_MAX 8
+#endif
+
+#ifndef ELE_MIN
+#define ELE_MIN 1
+#endif
 
 #define alpha( i,j ) A[ (j)*ldA + i ]   // map alpha( i,j ) to array A 
 #define beta( i,j )  B[ (j)*ldB + i ]   // map beta( i,j )  to array B
@@ -32,21 +41,21 @@ void setMatrixZero(double* A, int rows, int cols, int rs, int cs)
 // Assumes srand() has already been called
 int genRandomNumber(int min, int max)
 {
-	static const double fraction = 1.0 / (static_cast<double>(RAND_MAX) + 1.0);
-	return static_cast<int>(rand() * fraction * (max - min + 1) + min);
+  static const double fraction = 1.0 / (static_cast<double>(RAND_MAX) + 1.0);
+  return static_cast<int>(rand() * fraction * (max - min + 1) + min);
 }
 
 void gen_random_matrix(double* A, int rows, int cols, int rs, int cs)
 {
-	long i, j;
+  long i, j;
 	//unsigned short xsubi[3] = { 918, 729, 123 };
-	srand(static_cast<unsigned int>(time(0))); // set initial seed value to system clock
+  srand(static_cast<unsigned int>(time(0))); // set initial seed value to system clock
 
-	for (i = 0; i < rows; i++)
-		for (j = 0; j < cols; j++)
-		{
-			A[i*rs + j*cs] = (double)genRandomNumber(1, 8); // 1 + nrand48(xsubi) % 9;
-		}
+  for (i = 0; i < rows; i++)
+    for (j = 0; j < cols; j++)
+      {
+	A[i*rs + j*cs] = (double)genRandomNumber(ELE_MIN, ELE_MAX); // 1 + nrand48(xsubi) % 9;
+      }
 }
 
 int isMatrixMatch(double* ref, double* mat, int rows, int cols, int cs)
@@ -153,3 +162,22 @@ void readMatrices(char* str, double** A, double** B, double** C, int* M, int* K,
 	return;
 }
 
+void dumpMatrices(char* str, double* ap, double* bp, double* cp, int m, int n, int k, int cs_a, int cs_b, int cs_c)
+{
+	FILE* fp = NULL;
+	fp = fopen(str, "wt");
+	if (fp == NULL)
+	{
+		printf( "Error opening the matrix file\n");
+		exit(1);
+	}
+	fprintf(fp, "%d\t %d\t %d\t %d\t %d\t %d\n", m, k, n, cs_a, cs_b, cs_c);
+
+	writeMatrix(fp, ap, m, k, 1, cs_a);
+	writeMatrix(fp, bp, k, n, 1, cs_b);
+	writeMatrix(fp, cp, m, n, 1, cs_c);
+
+	fclose(fp);
+
+	return;
+}
