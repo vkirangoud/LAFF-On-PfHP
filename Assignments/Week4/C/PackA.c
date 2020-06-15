@@ -14,6 +14,9 @@ void PackMicroPanelA_MRxKC( int m, int k, double *A, int ldA, double *Atilde )
 	*Atilde++ = alpha( i, p );
   else /* Not a full row size micro-panel.  To be implemented */
     {
+      for (int p = 0; p < k; p++) {
+	for (int i = 0; i < m; i++) *Atilde++ = alpha(i, p);
+	for (int i = m; i < MR; i++) *Atilde++ = 0.0;
     }
 }
 
@@ -25,6 +28,7 @@ void PackBlockA_MCxKC( int m, int k, double *A, int ldA, double *Atilde )
   for ( int i=0; i<m; i+= MR ){
     int ib = min( MR, m-i );
     PackMicroPanelA_MRxKC( ib, k, &alpha( i, 0 ), ldA, Atilde );
-    Atilde += ib * k;
+    //Atilde += ib * k;
+    Atilde += MR * k;
   }
 }

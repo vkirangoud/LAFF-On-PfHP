@@ -8,17 +8,16 @@ void PackMicroPanelB_KCxNR( int k, int n, double *B, int ldB, double *Btilde )
 {
   /* March through B in row-major order, packing into Btilde as we go. */
 
-  if ( n == NR ) /* Full column width micro-panel.*/
+  if ( n == NR ) { /* Full column width micro-panel.*/
     for ( int p=0; p<k; p++ ) 
-      for ( int j=0; j<NR; j++ )
-	*Btilde++ = beta( p, j );
-  else /* Not a full row size micro-panel.  We pad with zeroes. */
+      for ( int j=0; j<NR; j++ ) *Btilde++ = beta( p, j );
+  }
+  else { /* Not a full row size micro-panel.  We pad with zeroes. */
     for ( int p=0; p<k; p++ ) {
-      for ( int j=0; j<n; j++ )
-	*Btilde++ = beta( p, j );
-      for ( int j=n; j<NR; j++ )
-	*Btilde++ = 0.0;
+      for ( int j=0; j<n; j++ ) *Btilde++ = beta( p, j );
+      for ( int j=n; j<NR; j++ ) *Btilde++ = 0.0;
     }
+  }
 }
 
 void PackPanelB_KCxNC( int k, int n, double *B, int ldB, double *Btilde )
